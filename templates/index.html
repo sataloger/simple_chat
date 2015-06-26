@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat</title>
+
+    <script src="http://code.jquery.com/jquery-2.1.4.js"></script>
+    <script type="text/javascript">
+        var ws;
+
+        function chatConnect(url){
+            ws = new WebSocket(url);
+            ws.onmessage = function(evt){
+                data = JSON.parse(evt.data);
+
+                if (data.action == 'RESPONSE'){
+                    // do nothing
+                    console.log(data.message);
+                }
+                if (data.action == 'ERROR'){
+                    console.log(data.message)
+                }
+                if (data.action == 'GET MESSAGE'){
+                    console.log("[Room " + data.room_id + "] " +data.author + ': ' + data.text)
+                }
+            };
+
+            ws.onclose = function(){
+                setTimeout(function(){chatConnect(url)}, 1000);
+            };
+        }
+
+        function chatLogin(nickname) {
+            ws.send(JSON.stringify({
+                'action': 'LOGIN NICK',
+                'nickname': nickname
+            }));
+        }
+
+        function chatJoinRoom(roomId) {
+            ws.send(JSON.stringify({
+                'action': 'JOIN ROOM',
+                'room_id': roomId
+            }))
+        }
+
+        function chatLeftRoom(roomId) {
+            ws.send(JSON.stringify({
+                'action': 'LEFT ROOM',
+                'room_id': roomId
+            }))
+        }
+
+        function chatSendMessage(room_id, message) {
+            ws.send(JSON.stringify({
+                'action': 'SEND MESSAGE',
+                'room_id': room_id,
+                'text': message
+            }))
+        }
+
+        function help(){
+            console.log("Available commands:");
+            console.log("chatLogin(nickname) - change your nickname (Anonymous by default)");
+            console.log("chatJoinRoom(roomId) - join to selected room");
+            console.log("chatLeftRoom(roomId) - leave selected room");
+            console.log("chatSendMessage(roomId, message) - send message to selected room (you should join room before send messages there)");
+            console.log("help() - show available commands");
+        }
+
+        $(document).ready(function() {
+            if( typeof(WebSocket) != "function" ) {
+                $('body').html("<h1>Error</h1><p>Your browser does not support HTML5 Web Sockets</p>");
+
+            } else {
+                chatConnect("{{ websocket_url }}");
+                help();
+            }
+        });
+
+    </script>
+</head>
+<body>
+<p>There's no UI now, so open your dev console to continue</p>
+</body>
+</html>
